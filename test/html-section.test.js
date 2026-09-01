@@ -100,3 +100,15 @@ await assert.rejects(() => sendHtmlApp(null, '2@s.whatsapp.net', '<b>a</b>'), Ty
 await assert.rejects(() => sendHtmlApp(sock, '', '<b>a</b>'), TypeError);
 
 console.log('html section tests passed');
+
+const kustom = htmlSection('<b>x</b>', { typename: 'FOAHtmlPrimitive' });
+assert.equal(kustom.view_model.primitive.__typename, 'FOAHtmlPrimitive');
+assert.equal(htmlSection('<b>x</b>').view_model.primitive.__typename, AI_RICH_HTML_PRIMITIVE);
+assert.throws(() => htmlSection('<b>x</b>', { typename: '' }), TypeError);
+assert.throws(() => htmlSection('<b>x</b>', { typename: 7 }), TypeError);
+
+calls.length = 0;
+await sendHtmlApp(sock, '2@s.whatsapp.net', '<b>x</b>', { typename: 'FOAHtmlPrimitive' });
+assert.deepEqual(decodeAIRich({ message: calls[0].message }).typenames, ['FOAHtmlPrimitive']);
+
+console.log('html typename override tests passed');

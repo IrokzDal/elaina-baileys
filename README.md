@@ -1230,6 +1230,18 @@ if (widget) {
 
 **Platform support.** This primitive appears nowhere in the WhatsApp Web bundle, and the Web renderer maps unknown primitives to an empty string. So it is deliberately excluded from `AI_RICH_PRIMITIVES` and listed in `AI_RICH_PRIMITIVES_ANDROID_ONLY` instead.
 
+**The typename is not validated.** `GenAIaeacdsnwHtmlPrimitive` occurs nowhere in the Android APK either — not in any dex, resource or native library. Android decodes the unified response through Meta's Pando runtime (`com.facebook.pando.TreeJNI`), which reinterprets a tree node as a model class **without comparing `__typename`**. The renderer dispatches on the field shape instead, and logs `JarvisRichContent/render skipped malformed HtmlSectionContent` when the shape does not fit. What actually has to be there is `payload` and `trusted_sources` — those two field names, and the class `HtmlSectionContent(payload=, trustedSources=)`, are in the APK. The Kotlin model for the section is `FOAHtmlPrimitive`, exported as `AI_RICH_HTML_PRIMITIVE_ANDROID_CLASS`.
+
+Pass `typename` to send the section under a different name:
+
+```js
+import { AI_RICH_HTML_PRIMITIVE_ANDROID_CLASS, htmlSection } from '@rexxhayanasi/elaina-baileys'
+
+rich.addSection(htmlSection(html, { typename: AI_RICH_HTML_PRIMITIVE_ANDROID_CLASS }))
+```
+
+The default stays `GenAIaeacdsnwHtmlPrimitive` because that is the name observed working in production.
+
 | Client | Result |
 |---|---|
 | Android | renders in a WebView, scripts run, taps and keys work |

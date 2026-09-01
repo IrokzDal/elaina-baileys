@@ -48,9 +48,12 @@ export declare function progressSection(title: string, options?: {
 
 export declare function lockHeight(height: number): string;
 
+export declare const AI_RICH_HTML_PRIMITIVE_ANDROID_CLASS: 'FOAHtmlPrimitive';
+
 export declare function htmlSection(html: string, options?: {
     trustedSources?: string[];
     height?: number;
+    typename?: string;
 }): any;
 
 export declare function sendHtmlApp(sock: any, jid: string, html: string, options?: {
@@ -58,6 +61,7 @@ export declare function sendHtmlApp(sock: any, jid: string, html: string, option
     label?: string;
     trustedSources?: string[];
     height?: number;
+    typename?: string;
     id?: string;
     bypassDownload?: boolean;
     [key: string]: any;

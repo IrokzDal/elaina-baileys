@@ -768,14 +768,14 @@ Every switch WhatsApp shows on its own poll composer is available here. The opti
 `canAddOption` remains the exception: it fails the whole poll wherever its receiving flag is off, images or not.
 
 ```js
-await sock.sendMessage(jid, {
+ await conn.sendMessage(jid, {
   poll: {
-    name: 'Where should we eat?',
+    name: 'Yang mana yang enak?',
     values: [
-      { name: 'Padang', image: { url: './padang.jpg' } },
-      'Sunda'
-    ],
-    selectableCount: 2,
+  { name: 'Nasi Padang', image: { url: global.elaina } },
+  { name: 'Nasi Goreng', image: { url: global.elaina } }
+],
+    selectableCount: 1,
     hideVoter: true,
     endDate: new Date(Date.now() + 24 * 60 * 60 * 1000)
   }

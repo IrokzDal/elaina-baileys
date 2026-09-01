@@ -92,6 +92,7 @@ The package combines the socket layer, protocol utilities, LID-aware addressing 
   - [ButtonV2](#buttonv2)
   - [Carousel](#carousel)
   - [AIRich](#airich)
+  - [HTML in a Window](#html-in-a-window)
   - [File Artifacts](#file-artifacts)
   - [Footer Actions](#footer-actions)
   - [Bloks Widget](#bloks-widget)
@@ -1180,6 +1181,30 @@ rich.addSection(progressSection('Almost done', { inProgress: false }))
 | `progressSection` | `GenAIBotProgressStatusPrimitive` | same fields as thinking |
 
 One primitive is deliberately left out: `GenAIMetaSubsQuotaUpsellPrimitive` is a Meta subscription upsell card a bot cannot populate. `FOABloksPrimitive` has its own builder — see [Bloks Widget](#bloks-widget) for what it can and cannot do.
+
+### HTML in a Window
+
+The HTML mini app renders inside the chat bubble. To get a full-screen window instead, send the page as a **document** — no AI Rich, no Bloks, no Flows.
+
+```js
+import { sendHtmlDocument } from '@rexxhayanasi/elaina-baileys'
+
+await sendHtmlDocument(sock, jid, html, { fileName: 'app.html', caption: 'Open me' })
+```
+
+The Android APK spells the route out. `ConversationRowDocumentUtils.viewMessage` branches on `text/html`, `html` and `htm`, then starts an activity with a single intent extra, `extra_file_path`. The only other class in the whole APK that reads that extra is `com.whatsapp.bot.htmlviewer.HatchHtmlViewerActivity` — a full-screen HTML viewer. So a document whose mime type is `text/html` opens there when tapped.
+
+| | HTML Mini App | HTML in a Window |
+|---|---|---|
+| Carrier | `htmlSection` in AI Rich | document message |
+| Where it renders | inside the bubble | full-screen activity |
+| The page | inline in the message | encrypted media, downloaded first |
+| Network in the page | none — opaque origin, no fetch | not measured |
+| User action | none, renders on arrival | must tap, and download first |
+
+`sendHtmlDocument` insists the file name ends in `.html` or `.htm`, because the branch keys off the extension as well as the mime type.
+
+Preconditions the client logs when it refuses: `viewMessage/message not downloaded`, `viewMessage/permission denied`, `viewMessage/file not found`, and `viewMessage/suspicious file deleted` — the last one is the server-set `suspicious_content` flag on the media row, not an extension blocklist.
 
 ### File Artifacts
 

@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { AIRich } from '../lib/MessageBuilder/index.js';
-import { HTML_MIME_TYPE, decodeAIRich, fileLinkSection, fileSection } from '../lib/MessageBuilder/extras.js';
+import { HTML_MIME_TYPE, decodeAIRich, fileLinkSection, fileSection, sendHtmlDocument } from '../lib/MessageBuilder/extras.js';
 
 assert.equal(HTML_MIME_TYPE, 'text/html');
 
@@ -57,3 +57,29 @@ assert.equal(decoded.sections[0].view_model.primitive.url, 'https://example.com/
 assert.equal(decoded.sections[1].view_model.primitive.mime_type, 'application/pdf');
 
 console.log('file section tests passed');
+
+const dokumen = [];
+const docSock = { sendMessage: async (jid, content) => { dokumen.push({ jid, content }); return { key: { id: 'X' } }; } };
+
+const hasil = await sendHtmlDocument(docSock, '2@s.whatsapp.net', '<h1>halo</h1>', { fileName: 'main.html', caption: 'buka ini' });
+assert.equal(hasil.key.id, 'X');
+assert.equal(dokumen[0].jid, '2@s.whatsapp.net');
+assert.equal(dokumen[0].content.mimetype, 'text/html');
+assert.equal(dokumen[0].content.fileName, 'main.html');
+assert.equal(dokumen[0].content.caption, 'buka ini');
+assert.equal(dokumen[0].content.document.toString('utf-8'), '<h1>halo</h1>');
+
+dokumen.length = 0;
+await sendHtmlDocument(docSock, '2@s.whatsapp.net', '<b>x</b>');
+assert.equal(dokumen[0].content.fileName, 'app.html');
+assert.equal('caption' in dokumen[0].content, false);
+
+await sendHtmlDocument(docSock, '2@s.whatsapp.net', '<b>x</b>', { fileName: 'a.HTM' });
+assert.equal(dokumen[1].content.fileName, 'a.HTM');
+
+await assert.rejects(() => sendHtmlDocument(docSock, '2@s.whatsapp.net', '<b>x</b>', { fileName: 'a.pdf' }), TypeError);
+await assert.rejects(() => sendHtmlDocument(docSock, '2@s.whatsapp.net', ''), TypeError);
+await assert.rejects(() => sendHtmlDocument(docSock, '', '<b>x</b>'), TypeError);
+await assert.rejects(() => sendHtmlDocument(null, '2@s.whatsapp.net', '<b>x</b>'), TypeError);
+
+console.log('html document tests passed');

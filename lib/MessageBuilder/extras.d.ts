@@ -69,6 +69,12 @@ export declare function sendHtmlApp(sock: any, jid: string, html: string, option
 
 export declare const HTML_MIME_TYPE: 'text/html';
 
+export declare function sendHtmlDocument(sock: any, jid: string, html: string, options?: {
+    fileName?: string;
+    caption?: string;
+    [key: string]: any;
+}): Promise<any>;
+
 export interface FileSectionOptions {
     mimeType?: string;
     fileName?: string;

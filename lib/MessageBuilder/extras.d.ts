@@ -67,6 +67,20 @@ export declare function sendHtmlApp(sock: any, jid: string, html: string, option
     [key: string]: any;
 }): Promise<any>;
 
+export declare const HTML_MIME_TYPE: 'text/html';
+
+export interface FileSectionOptions {
+    mimeType?: string;
+    fileName?: string;
+    size?: number;
+    title?: string;
+    thumbnailUrl?: string;
+    uuid?: string;
+}
+
+export declare function fileSection(url: string, options?: FileSectionOptions): any;
+export declare function fileLinkSection(url: string, options?: FileSectionOptions): any;
+
 export declare function footerActionSection(actionType: string, options?: {
     buttonText?: string;
     actionId?: string;

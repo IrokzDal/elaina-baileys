@@ -92,6 +92,7 @@ The package combines the socket layer, protocol utilities, LID-aware addressing 
   - [ButtonV2](#buttonv2)
   - [Carousel](#carousel)
   - [AIRich](#airich)
+  - [File Artifacts](#file-artifacts)
   - [Footer Actions](#footer-actions)
   - [Bloks Widget](#bloks-widget)
   - [HTML Mini App](#html-mini-app)
@@ -1179,6 +1180,33 @@ rich.addSection(progressSection('Almost done', { inProgress: false }))
 | `progressSection` | `GenAIBotProgressStatusPrimitive` | same fields as thinking |
 
 One primitive is deliberately left out: `GenAIMetaSubsQuotaUpsellPrimitive` is a Meta subscription upsell card a bot cannot populate. `FOABloksPrimitive` has its own builder — see [Bloks Widget](#bloks-widget) for what it can and cannot do.
+
+### File Artifacts
+
+Two primitives the Web bundle has never heard of: `GenAIFilePrimitive` and `GenAIFileLinkPrimitive`. Android scans the sections for them (`AiRichResponseFileArtifactDetector`) and hands what it finds to `com.whatsapp.bot.fileviewer.AiFileViewerActivity`, whose log tags are `AiFileViewer/renderHtml`, `AiFileViewer/openPdf` and `AiFileViewer/download`. So the mime type decides what the viewer does with the file.
+
+```js
+import { AIRich, HTML_MIME_TYPE, fileLinkSection, fileSection } from '@rexxhayanasi/elaina-baileys'
+
+const rich = new AIRich(sock)
+rich.addSection(fileSection('https://example.com/app.html', {
+    fileName: 'app.html',
+    title: 'Mini App',
+    mimeType: HTML_MIME_TYPE
+}))
+await rich.send(jid)
+```
+
+| Field | Notes |
+|---|---|
+| `url` | where the client fetches the file; required |
+| `mime_type` | defaults to `text/html`; `application/pdf` takes the `openPdf` path instead |
+| `file_name` | defaults to `index.html` |
+| `size`, `title`, `uuid`, `thumbnail_url` | optional; `uuid` is generated when omitted |
+
+Every one of those field names is a literal string in the Android APK, as is the `FileArtifact(url=, mimeType=, fileName=, size=, uuid=, title=, thumbnailUrl=)` data class.
+
+Unlike [the HTML mini app](#html-mini-app), the page is **not** carried in the message — the client downloads it, so it needs to be reachable and the surrounding message has to be recent. `AIAssetFetcher` logs `Message is older than 2 days, skipping image download`, so an artifact on an older message is not fetched at all. Whether the viewer opens for a bot-sent message is gated by `AI_RICH_RESPONSE_ARTIFACTS_ENABLED` and has not been confirmed end to end.
 
 ### Footer Actions
 

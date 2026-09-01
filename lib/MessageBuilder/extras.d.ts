@@ -67,6 +67,11 @@ export declare function sendHtmlApp(sock: any, jid: string, html: string, option
     [key: string]: any;
 }): Promise<any>;
 
+export declare function footerActionSection(actionType: string, options?: {
+    buttonText?: string;
+    actionId?: string;
+}): any;
+
 export declare const BLOKS_A2UI_TYPE: 'im_a2ui';
 export declare const BLOKS_A2UI_REPLY_ACTION: 'a2ui_reply_action';
 export declare const BLOKS_A2UI_SUPPORTED_ELEMENTS: readonly string[];
@@ -109,7 +114,9 @@ export declare function decodeAIRich(msg: any): {
     responseId?: string;
     layouts: string[];
     typenames: string[];
+    footerTypenames: string[];
     sections: any[];
+    footerSections: any[];
     submessages: any[];
     unified: any;
 } | null;

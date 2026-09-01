@@ -115,6 +115,8 @@ export declare class AIRich extends BaseBuilder {
   delete(target: string | number): this;
   addSubmessage(submessage: any, options?: AIRichItemOptions): this;
   addSection(section: any, options?: AIRichItemOptions): this;
+  addFooterSection(section: any): this;
+  clearFooterSections(): this;
   addText(text: string, options?: AIRichItemOptions & { hyperlink?: boolean; citation?: boolean; latex?: boolean }): this;
   addFOAText(text: string, options?: AIRichItemOptions): this;
   addCode(language: string, code: string, options?: AIRichItemOptions): this;

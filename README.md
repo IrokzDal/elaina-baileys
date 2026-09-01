@@ -92,6 +92,7 @@ The package combines the socket layer, protocol utilities, LID-aware addressing 
   - [ButtonV2](#buttonv2)
   - [Carousel](#carousel)
   - [AIRich](#airich)
+  - [Footer Actions](#footer-actions)
   - [Bloks Widget](#bloks-widget)
   - [HTML Mini App](#html-mini-app)
 - [Album Message](#-album-message)
@@ -1178,6 +1179,29 @@ rich.addSection(progressSection('Almost done', { inProgress: false }))
 | `progressSection` | `GenAIBotProgressStatusPrimitive` | same fields as thinking |
 
 One primitive is deliberately left out: `GenAIMetaSubsQuotaUpsellPrimitive` is a Meta subscription upsell card a bot cannot populate. `FOABloksPrimitive` has its own builder — see [Bloks Widget](#bloks-widget) for what it can and cannot do.
+
+### Footer Actions
+
+The unified response has a second array beside `sections` called `footer_sections`, and Android renders `GenAIFooterActionPrimitive` inside it. Web does not — the Web bundle carries the action-type enum but no parser for the primitive.
+
+```js
+import { AIRich, FooterActionType, footerActionSection, htmlSection } from '@rexxhayanasi/elaina-baileys'
+
+const rich = new AIRich(sock)
+rich.addSection(htmlSection(html, { height: 320 }))
+rich.addFooterSection(footerActionSection(FooterActionType.OPEN_FULL_VIEW, { buttonText: 'Open' }))
+await rich.send(jid)
+```
+
+`addFooterSection` puts a section in `footer_sections`; the key is omitted entirely when nothing was added, so existing messages are unchanged. `decodeAIRich` reads them back as `footerSections` and `footerTypenames`.
+
+| Field | Value |
+|---|---|
+| `action_type` | one of `FooterActionType` — `OPEN_FULL_VIEW`, `DOWNLOAD_MEDIA`, `GENERATE_IMAGE`, `CANCEL_REASONING`, `UPGRADE_TO_SUBS` |
+| `action_id` | identifier echoed back on tap; generated when omitted |
+| `button_text` | label on the button |
+
+All three names are literal strings in the Android APK, alongside `footer_sections` and the `GenAIFooterActionPrimitiveImpl` model. What the client does on each action type is not documented here because it has not been confirmed end to end — `OPEN_FULL_VIEW` is the one worth probing, since the APK also carries `com.whatsapp.bot.htmlviewer.HatchHtmlViewerActivity`, a full-screen HTML viewer.
 
 ### Bloks Widget
 

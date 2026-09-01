@@ -92,6 +92,7 @@ The package combines the socket layer, protocol utilities, LID-aware addressing 
   - [ButtonV2](#buttonv2)
   - [Carousel](#carousel)
   - [AIRich](#airich)
+  - [Bloks Widget](#bloks-widget)
   - [HTML Mini App](#html-mini-app)
 - [Album Message](#-album-message)
 - [Newsletter / Channel](#-newsletter--channel)
@@ -1176,7 +1177,52 @@ rich.addSection(progressSection('Almost done', { inProgress: false }))
 | `thinkingSection` | `GenAIBotThinkingStatusPrimitive` | `title`, `icon`, `is_in_progress`, `meta_search_apps` |
 | `progressSection` | `GenAIBotProgressStatusPrimitive` | same fields as thinking |
 
-Two primitives are deliberately left out: `GenAIMetaSubsQuotaUpsellPrimitive` is a Meta subscription upsell card, and `FOABloksPrimitive` renders a Bloks screen, neither of which a bot can populate.
+One primitive is deliberately left out: `GenAIMetaSubsQuotaUpsellPrimitive` is a Meta subscription upsell card a bot cannot populate. `FOABloksPrimitive` has its own builder — see [Bloks Widget](#bloks-widget) for what it can and cannot do.
+
+### Bloks Widget
+
+Bloks is Meta's server-driven UI framework. The WhatsApp client ships a complete Bloks interpreter — several hundred components, an expression parser, a script executor — and a message can point at a Bloks app by name. It reaches a chat through two carriers:
+
+| Carrier | Where it lives | Client gate |
+|---|---|---|
+| `bloksWidget` | `interactiveMessage.bloksWidget` | AB prop `im_bloks_widget_enable` |
+| `FOABloksPrimitive` | an AI Rich section | AB prop `wa_web_ur_bloks_enabled` |
+
+Both carry the same four-field shape and both end up in the same renderer.
+
+```js
+import { BLOKS_A2UI_TYPE, bloksSection, bloksWidget, decodeBloksWidget, sendBloksWidget } from '@rexxhayanasi/elaina-baileys'
+
+await sendBloksWidget(sock, jid, {
+    type: BLOKS_A2UI_TYPE,
+    data: { title: 'Status pesanan', a2ui_supported_elements: 'info_card, list_card' },
+    fallback: 'Buka di aplikasi WhatsApp terbaru'
+})
+```
+
+| Field | Meaning |
+|---|---|
+| `type` | name of a Bloks app **registered on Meta's servers**; `im_a2ui` is the one WhatsApp itself uses |
+| `data` | JSON string of parameters passed to that app; `sendBloksWidget` stringifies a plain object for you |
+| `uuid` | render identifier, generated for you when omitted |
+| `fallback` | plain text shown when the widget cannot render |
+
+**The tree is fetched, not carried.** This is the limit worth understanding before building on it. The client does not read UI out of the message. It renders a loader template, then POSTs to `/async/wbloks/fetch/?appid=&type=app&__bkv=<versioning id>` with `params = JSON.stringify({ type, data, uuid })` and renders whatever Bloks payload the server sends back. So `data` parameterizes an app Meta already published — it cannot define one. An unregistered `type` renders nothing, and the client falls back to `fallback` text.
+
+`a2ui_supported_elements` defaults to `"info_card, list_card"`, which is the whole element vocabulary the A2UI app currently accepts. There is no HTML surface, no arbitrary layout, and no page of your own here — for that, use the [HTML Mini App](#html-mini-app) instead.
+
+**Rendering as a bare widget.** The client treats the message as Bloks-only, with no bubble chrome, when the widget is present *and* there is no header title, subtitle or media, no footer text, and the body text is either empty or exactly equal to `fallback`. `sendBloksWidget` defaults `body` to `fallback` so this holds; pass a different `body` to get the ordinary bubble back.
+
+**Reading one back.**
+
+```js
+const widget = decodeBloksWidget(m)
+if (widget) {
+    console.log(widget.type, widget.params)
+}
+```
+
+`bloksSection(type, data, { uuid, initialResponse, versioningId })` builds the AI Rich form for `rich.addSection(...)`. It adds `initial_response` and `versioning_id`, which the AI Rich carrier passes through and the widget carrier has no field for.
 
 ### HTML Mini App
 

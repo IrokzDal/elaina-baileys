@@ -2271,6 +2271,15 @@ Supporting commands:
 | `npm run verify:proto` | round-trip encoder only |
 | `npm run fetch:bundle -- <dir>` | download the raw bundle |
 | `npm run update:version` | bump the pinned revision without any of the checks |
+| `npm run audit:apk -- <dir>` | diff `WAProto` against an extracted Android APK |
+
+**Auditing against Android.** Everything above reads the WhatsApp **Web** bundle, so a field the Android client knows and Web does not never reaches `WAProto` at all. `audit:apk` closes that blind spot: point it at a directory of extracted `classes*.dex` and it parses the protobuf model classes straight out of the dex — reading each `*_FIELD_NUMBER` constant and its value — then reports which fields and which whole types are missing, with their field numbers.
+
+```
+npm run audit:apk -- /path/to/extracted-apk
+```
+
+It is read-only and changes nothing; the output is a worklist, not a patch. Adding a field still means editing the generator's inputs, because `npm run proto:update` regenerates `WAProto` from the Web bundle and would drop a hand-written field.
 
 The diff covers every surface a WhatsApp change can reach the wire through — protobuf specs, stanza tags and attributes, `xmlns`, MEX operations, media paths — so a release that only moves UI code is reported as exactly that. `AGENTS.md` documents which surfaces matter and which are client-side noise.
 

@@ -1192,7 +1192,17 @@ import { sendHtmlDocument } from '@rexxhayanasi/elaina-baileys'
 await sendHtmlDocument(sock, jid, html, { fileName: 'app.html', caption: 'Open me' })
 ```
 
-**Measured result: this opens the system browser, not a window inside WhatsApp.** `ConversationRowDocumentUtils.viewMessage` does branch on `text/html`, `html` and `htm`, and it does hold a `const-class` on `com.whatsapp.bot.htmlviewer.HatchHtmlViewerActivity` — the app's full-screen HTML viewer — passing it a single intent extra, `extra_file_path`. But some condition guarding that branch is not met for an ordinary chat, and the tap falls through to an external `ACTION_VIEW`. Treat this as a way to hand someone an HTML file, not as an in-app surface.
+**Measured result: this opens the system browser, not a window inside WhatsApp** — and the disassembly says why.
+
+`ConversationRowDocumentUtils.viewMessage` really does end in the app's own full-screen HTML viewer: it builds an `Intent` for `com.whatsapp.bot.htmlviewer.HatchHtmlViewerActivity` and puts a single extra, `extra_file_path`. That activity reads nothing else. Three conditions have to hold first, in this order:
+
+1. the sender's WID equals a constant compiled into the APK,
+2. the document's mime type equals `text/html`,
+3. the file's extension is `html` or `htm`, case-insensitively.
+
+Condition 1 is the wall. The constant is built in that class's static initialiser from the literal string `1807055946647697` — Meta's Hatch bot. **The full-screen HTML window opens only for messages sent by that one JID.** A sender WID is established by the Signal session and the server envelope, not by anything in the payload, so no third-party bot can satisfy it.
+
+So: a window that renders HTML the message itself carries exists in the client, and it is closed to bots by an identity check rather than by a capability flag or an AB prop. For a bot, the reachable HTML surface is the inline one — [the HTML mini app](#html-mini-app) — which renders in the bubble. Sending a page as a document remains a way to hand someone a file, and it opens in their browser.
 
 | | HTML Mini App | HTML as a Document |
 |---|---|---|

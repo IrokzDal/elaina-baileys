@@ -87,6 +87,39 @@ export interface FileSectionOptions {
 export declare function fileSection(url: string, options?: FileSectionOptions): any;
 export declare function fileLinkSection(url: string, options?: FileSectionOptions): any;
 
+export interface BotMediaMetadata {
+    fileSha256?: string;
+    mediaKey?: string;
+    fileEncSha256?: string;
+    directPath?: string;
+    mediaKeyTimestamp?: number;
+    mimetype?: string;
+}
+
+export declare function botMediaMetadata(documentMessage: any): BotMediaMetadata;
+
+export declare function prepareFileArtifact(sock: any, content: string | Uint8Array, options?: {
+    mimetype?: string;
+    fileName?: string;
+    title?: string;
+    id?: string;
+}): Promise<{
+    mediaId: string;
+    media: BotMediaMetadata;
+    documentMessage: any;
+    section: any;
+    mediaDetails: { id: string; previewMedia: BotMediaMetadata; highResMedia: BotMediaMetadata };
+}>;
+
+export declare function sendHtmlArtifact(sock: any, jid: string, html: string, options?: {
+    fileName?: string;
+    title?: string;
+    label?: string;
+    id?: string;
+    bypassDownload?: boolean;
+    [key: string]: any;
+}): Promise<{ message: any; mediaId: string }>;
+
 export declare function footerActionSection(actionType: string, options?: {
     buttonText?: string;
     actionId?: string;

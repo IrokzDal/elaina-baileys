@@ -1231,7 +1231,32 @@ await rich.send(jid)
 
 Every one of those field names is a literal string in the Android APK, as is the `FileArtifact(url=, mimeType=, fileName=, size=, uuid=, title=, thumbnailUrl=)` data class.
 
-Unlike [the HTML mini app](#html-mini-app), the page is **not** carried in the message — the client downloads it, so it needs to be reachable and the surrounding message has to be recent. `AIAssetFetcher` logs `Message is older than 2 days, skipping image download`, so an artifact on an older message is not fetched at all. Whether the viewer opens for a bot-sent message is gated by `AI_RICH_RESPONSE_ARTIFACTS_ENABLED` and has not been confirmed end to end.
+**A plain URL will not work.** `UnifiedResponseActionHandlerFactory` logs `downloadFile: rejected untrusted file URL`, so `fileSection`/`fileLinkSection` are useful for describing a file, not for getting one opened. What the client actually resolves is WhatsApp's own encrypted media, referenced by `media_id`, and it refuses anything else with `viewFile: could not resolve AI file (no forwarded metadata or non-bot sender)` and `checkAndDownloadFile - missing previewMedia or required fields`.
+
+#### sendHtmlArtifact
+
+`sendHtmlArtifact` builds that whole chain: it uploads the page through the normal media pipeline, references it by `media_id`, and attaches the metadata the client needs to resolve it.
+
+```js
+import { sendHtmlArtifact } from '@rexxhayanasi/elaina-baileys'
+
+const { message, mediaId } = await sendHtmlArtifact(sock, jid, html, {
+    fileName: 'app.html',
+    title: 'Mini App',
+    label: 'Open'
+})
+```
+
+The message it produces carries two halves that have to agree:
+
+| Half | Where |
+|---|---|
+| `media_id` | on the `GenAIFilePrimitive` inside `sections` |
+| `{ id, previewMedia, highResMedia }` | `messageContextInfo.botMetadata.unifiedResponseMutation.mediaDetailsMetadataList` |
+
+`previewMedia` and `highResMedia` are `BotMediaMetadata`, whose `fileSha256`, `mediaKey` and `fileEncSha256` are **base64 strings in this message, not bytes** — unlike every other media field in the protocol. `botMediaMetadata()` does that conversion from a prepared document message, and `prepareFileArtifact()` returns both halves if you want to assemble the message yourself.
+
+Two limits that come from the client, not from this library: `AIAssetFetcher` logs `Message is older than 2 days, skipping image download`, so an artifact on an older message is never fetched; and the whole surface sits behind `AI_RICH_RESPONSE_ARTIFACTS_ENABLED`. Whether the viewer opens for a bot-sent message has not been confirmed end to end.
 
 ### Footer Actions
 

@@ -116,6 +116,7 @@ export declare class AIRich extends BaseBuilder {
   addSubmessage(submessage: any, options?: AIRichItemOptions): this;
   addSection(section: any, options?: AIRichItemOptions): this;
   addFooterSection(section: any): this;
+  setBotMetadata(extra: Record<string, any>): this;
   clearFooterSections(): this;
   addText(text: string, options?: AIRichItemOptions & { hyperlink?: boolean; citation?: boolean; latex?: boolean }): this;
   addFOAText(text: string, options?: AIRichItemOptions): this;

@@ -35,15 +35,13 @@ export declare function thinkingSection(title: string, options?: {
     icon?: string;
     inProgress?: boolean;
     metaSearchApps?: string[];
-    targetScreenId?: string;
-    targetScreenTabId?: string;
+    thoughtDurationSec?: number;
 }): any;
 export declare function progressSection(title: string, options?: {
     icon?: string;
     inProgress?: boolean;
     metaSearchApps?: string[];
-    targetScreenId?: string;
-    targetScreenTabId?: string;
+    thoughtDurationSec?: number;
 }): any;
 
 export declare function lockHeight(height: number): string;
@@ -76,12 +74,11 @@ export declare function sendHtmlDocument(sock: any, jid: string, html: string, o
 }): Promise<any>;
 
 export interface FileSectionOptions {
-    mimeType?: string;
-    fileName?: string;
-    size?: number;
     title?: string;
-    thumbnailUrl?: string;
-    uuid?: string;
+    fileExtension?: string;
+    fileLength?: number;
+    pageCount?: number;
+    previewImage?: any;
 }
 
 export declare function fileSection(url: string, options?: FileSectionOptions): any;

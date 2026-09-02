@@ -41,16 +41,15 @@ const artifact = await prepareFileArtifact(sock, html, { fileName: 'main.html', 
 
 assert.equal(artifact.mediaId, 'fixed-id');
 assert.equal(artifact.section.view_model.primitive.__typename, 'GenAIFilePrimitive');
-assert.equal(artifact.section.view_model.primitive.media_id, 'fixed-id');
-assert.equal(artifact.section.view_model.primitive.mime_type, 'text/html');
-assert.equal(artifact.section.view_model.primitive.file_name, 'main.html');
+assert.equal(artifact.section.view_model.primitive.preview_image.media_id, 'fixed-id');
+assert.equal(artifact.section.view_model.primitive.preview_image.mime_type, 'text/html');
+assert.equal(artifact.section.view_model.primitive.file_extension, 'html');
 assert.equal(artifact.section.view_model.primitive.title, 'Judul');
-assert.equal('url' in artifact.section.view_model.primitive, false);
 assert.equal(artifact.mediaDetails.id, 'fixed-id');
 assert.equal(artifact.mediaDetails.previewMedia.directPath, '/v/t62/enc');
 assert.equal(artifact.mediaDetails.highResMedia.directPath, '/v/t62/enc');
 assert.ok(artifact.media.mediaKey);
-assert.equal(artifact.section.view_model.primitive.size, Number(artifact.documentMessage.fileLength));
+assert.equal(artifact.section.view_model.primitive.file_length, Number(artifact.documentMessage.fileLength));
 
 assert.equal(uploads, 1);
 assert.equal(
@@ -75,7 +74,7 @@ assert.equal(typeof list[0].previewMedia.mediaKey, 'string');
 
 const decoded = decodeAIRich({ message: calls[0].message });
 assert.deepEqual(decoded.typenames, ['GenAIFilePrimitive']);
-assert.equal(decoded.sections[0].view_model.primitive.media_id, sent.mediaId);
+assert.equal(decoded.sections[0].view_model.primitive.preview_image.media_id, sent.mediaId);
 assert.deepEqual(
     calls[0].message.botForwardedMessage.message.richResponseMessage.submessages,
     [{ messageType: 2, messageText: 'buka' }]

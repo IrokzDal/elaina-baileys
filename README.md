@@ -1177,7 +1177,7 @@ rich.addSection(progressSection('Almost done', { inProgress: false }))
 | `imageSection` | `GenAIImagePrimitive` | `full_image` / `preview_image`, each with `url` and `url_fallback` |
 | `taskSection` | `GenAITaskPrimitive` | `task_id`, `title`, `subtitle`, `status`; an empty `task_id` makes the client drop the item |
 | `latexSection` | `GenAILatexUXPrimitive` | `latex_expression`, optional rendered `latex_image` |
-| `thinkingSection` | `GenAIBotThinkingStatusPrimitive` | `title`, `icon`, `is_in_progress`, `meta_search_apps` |
+| `thinkingSection` | `GenAIBotThinkingStatusPrimitive` | `title`, `icon`, `is_in_progress`, `meta_search_apps`, `thought_duration_sec` |
 | `progressSection` | `GenAIBotProgressStatusPrimitive` | same fields as thinking |
 
 One primitive is deliberately left out: `GenAIMetaSubsQuotaUpsellPrimitive` is a Meta subscription upsell card a bot cannot populate. `FOABloksPrimitive` has its own builder — see [Bloks Widget](#bloks-widget) for what it can and cannot do.
@@ -1225,11 +1225,12 @@ await rich.send(jid)
 | Field | Notes |
 |---|---|
 | `url` | where the client fetches the file; required |
-| `mime_type` | defaults to `text/html`; `application/pdf` takes the `openPdf` path instead |
-| `file_name` | defaults to `index.html` |
-| `size`, `title`, `uuid`, `thumbnail_url` | optional; `uuid` is generated when omitted |
+| `title` | shown on the card |
+| `file_extension` | `html` by default; a leading dot is stripped |
+| `file_length` | size in bytes |
+| `page_count`, `preview_image` | optional, omitted entirely when not given |
 
-Every one of those field names is a literal string in the Android APK, as is the `FileArtifact(url=, mimeType=, fileName=, size=, uuid=, title=, thumbnailUrl=)` data class.
+These are the model's real fields, read out of the Android APK's own primitive model — the class loads exactly `title`, `url`, `file_extension`, `file_length`, `page_count` and `preview_image`, and nothing else.
 
 **A plain URL will not work.** `UnifiedResponseActionHandlerFactory` logs `downloadFile: rejected untrusted file URL`, so `fileSection`/`fileLinkSection` are useful for describing a file, not for getting one opened. What the client actually resolves is WhatsApp's own encrypted media, referenced by `media_id`, and it refuses anything else with `viewFile: could not resolve AI file (no forwarded metadata or non-bot sender)` and `checkAndDownloadFile - missing previewMedia or required fields`.
 

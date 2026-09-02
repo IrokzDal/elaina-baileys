@@ -92,6 +92,7 @@ The package combines the socket layer, protocol utilities, LID-aware addressing 
   - [ButtonV2](#buttonv2)
   - [Carousel](#carousel)
   - [AIRich](#airich)
+  - [A2UI Cards](#a2ui-cards)
   - [HTML Mini App](#html-mini-app)
 - [Album Message](#-album-message)
 - [Newsletter / Channel](#-newsletter--channel)
@@ -1196,6 +1197,53 @@ rich.addSection(progressSection('Almost done', { inProgress: false }))
 | `progressSection` | `GenAIBotProgressStatusPrimitive` | same fields as thinking |
 
 Two primitives are deliberately left out: `GenAIMetaSubsQuotaUpsellPrimitive` is a Meta subscription upsell card, and `FOABloksPrimitive` names a Bloks screen the client fetches from Meta's servers rather than reading out of the message — neither of which a bot can populate.
+
+### A2UI Cards
+
+`interactiveMessage.bloksWidget` with `type: "im_a2ui"` renders a card the client draws **from a declarative spec carried in the message**. No HTML, no hosting, and unlike the rest of Bloks nothing is fetched from Meta — the components travel in `data` and the client lays them out.
+
+```js
+import { a2uiColumn, a2uiImage, a2uiText, sendA2UI } from '@rexxhayanasi/elaina-baileys'
+
+await sendA2UI(sock, jid, [
+    a2uiColumn('root', ['card_image', 'card_title', 'card_body']),
+    a2uiImage('card_image', 'https://example.com/header.jpg'),
+    a2uiText('card_title', 'Welcome!', { variant: 'h1' }),
+    a2uiText('card_body', 'Nice to have you here.')
+], {
+    buttons: [{
+        name: 'cta_url',
+        buttonParamsJson: JSON.stringify({ display_text: 'Join Group', url: 'https://chat.whatsapp.com/…' })
+    }]
+})
+```
+
+The layout is a flat list addressed by id: exactly one component must be `root`, and containers name their children by id rather than nesting them. `sendA2UI` throws if `root` is missing.
+
+| Builder | Emits |
+|---|---|
+| `a2uiColumn(id, children)` | `Column` — children stacked vertically |
+| `a2uiRow(id, children)` | `Row` |
+| `a2uiText(id, text, { variant })` | `Text` — `variant` is `h1`, `body`, and so on |
+| `a2uiImage(id, url, { variant, fit })` | `Image` — defaults `header` and `cover` |
+
+The wrapper `a2uiSurface` builds the payload itself if you want to hand-write components the helpers do not cover:
+
+```js
+{
+  version: 'v0.9',
+  createSurface: {
+    surfaceId: 'card-<uuid>',
+    catalogId: 'https://a2ui.org/specification/v0_9/catalogs/basic/catalog.json',
+    sendDataModel: false,
+    components: [ … ]
+  }
+}
+```
+
+`catalogId` names the component vocabulary, so components outside the basic catalog will not render. Only `Column`, `Row`, `Text` and `Image` have been confirmed on a device; the catalog lists more, and `a2uiSurface` will carry any object you give it, but treat the rest as untested.
+
+The A2UI card and the native-flow buttons live in the same `interactiveMessage`, which is how the card gets a button row beneath it. `decodeBloksWidget(msg)` reads one back, with `params` already parsed.
 
 ### HTML Mini App
 

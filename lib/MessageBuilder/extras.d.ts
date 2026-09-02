@@ -145,6 +145,50 @@ export declare function footerActionSection(actionType: string, options?: {
     actionId?: string;
 }): any;
 
+export declare const A2UI_VERSION: 'v0.9';
+export declare const A2UI_BASIC_CATALOG: string;
+export declare const A2UI_ROOT_ID: 'root';
+
+export interface A2UIComponent {
+    id: string;
+    component: string;
+    [key: string]: any;
+}
+
+export declare function a2uiText(id: string, text: string, options?: { variant?: string }): A2UIComponent;
+export declare function a2uiImage(id: string, url: string, options?: { variant?: string; fit?: string }): A2UIComponent;
+export declare function a2uiColumn(id: string, children?: string[]): A2UIComponent;
+export declare function a2uiRow(id: string, children?: string[]): A2UIComponent;
+
+export declare function a2uiSurface(components: A2UIComponent[], options?: {
+    surfaceId?: string;
+    catalogId?: string;
+    sendDataModel?: boolean;
+    version?: string;
+}): any;
+
+export declare function a2uiWidget(components: A2UIComponent[], options?: {
+    uuid?: string;
+    surfaceId?: string;
+    catalogId?: string;
+    sendDataModel?: boolean;
+    version?: string;
+    fallback?: string;
+}): BloksWidget;
+
+export declare function sendA2UI(sock: any, jid: string, components: A2UIComponent[], options?: {
+    buttons?: any[];
+    contextInfo?: any;
+    uuid?: string;
+    surfaceId?: string;
+    catalogId?: string;
+    sendDataModel?: boolean;
+    fallback?: string;
+    messageId?: string;
+    additionalNodes?: any[];
+    [key: string]: any;
+}): Promise<any>;
+
 export declare const BLOKS_A2UI_TYPE: 'im_a2ui';
 export declare const BLOKS_A2UI_REPLY_ACTION: 'a2ui_reply_action';
 export declare const BLOKS_A2UI_SUPPORTED_ELEMENTS: readonly string[];

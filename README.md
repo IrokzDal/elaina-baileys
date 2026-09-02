@@ -684,6 +684,23 @@ await sock.sendMessage(jid, {
 })
 ```
 
+**View once.** Text supports view-once, not just media. `ExtendedTextMessage` carries a `viewOnce` field, and the Android client has a whole module for it — `FMessageViewOnceText`, `ConversationRowViewOnceText`, `ViewOnceTextRowFactory`, a dedicated `ViewOnceTextFragment`, and its own `VIEW_ONCE_TEXT_MESSAGES_SENT` / `_RECEIVED` / `_OPENED` counters.
+
+```js
+await sock.sendMessage(jid, {
+  text: 'this disappears once read',
+  viewOnceV2Extension: true
+})
+```
+
+That produces what the client actually looks for — it reads `extendedTextMessage.viewOnce` and expects the `viewOnceMessageV2Extension` wrapper:
+
+```js
+{ viewOnceMessageV2Extension: { message: { extendedTextMessage: { text, viewOnce: true } } } }
+```
+
+`viewOnce: true` and `viewOnceV2: true` also work and wrap in `viewOnceMessage` / `viewOnceMessageV2` instead. The plain `conversation` field cannot carry this — it is a bare string with nowhere to put the flag — so the text has to travel as `extendedTextMessage`, which this fork always does.
+
 ### Image
 
 ```js

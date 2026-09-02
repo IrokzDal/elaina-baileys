@@ -340,9 +340,32 @@ const patchTypings = (source, gaps, needed, specs) => {
     return src
 }
 
-const bundle = await loadBundle({ directory: process.env.PROTO_BUNDLE_DIR })
-const fork = readForkInterfaces()
-const { missingMessage, gaps, needed } = diffBundle(bundle, fork)
+const gapsFileAt = process.argv.indexOf('--gaps')
+const gapsFile = gapsFileAt !== -1 ? process.argv[gapsFileAt + 1] : null
+
+/**
+ * WAProto is generated from the WhatsApp Web bundle. A second source — the
+ * Android APK, via script/auditapk.js — can supply the same gap shape, so a
+ * field only the Android client declares still gets patched in by this codegen
+ * rather than by hand.
+ */
+const load = async () => {
+    if (!gapsFile) {
+        const bundle = await loadBundle({ directory: process.env.PROTO_BUNDLE_DIR })
+        const fork = readForkInterfaces()
+        return { specs: bundle.specs, ...diffBundle(bundle, fork) }
+    }
+    const external = JSON.parse(readFileSync(gapsFile, 'utf8'))
+    return {
+        specs: new Map(Object.entries(external.specs ?? {})),
+        missingMessage: [],
+        gaps: external.gaps ?? [],
+        needed: external.needed ?? []
+    }
+}
+
+const { specs, missingMessage, gaps, needed } = await load()
+const bundle = { specs }
 
 if (missingMessage.length) {
     console.error('Message oneof is behind the bundle; regenerate WAProto rather than patching:')

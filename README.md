@@ -1465,9 +1465,12 @@ await sock.sendMessage(jid, {
       video: { url: 'https://example.com/3.mp4' },
       caption: 'Video 3'
     }
-  ]
+  ],
+  caption: 'Caption for the album itself'
 })
 ```
+
+The per-item `caption` rides on each image or video. The `caption` beside `album` is the album's own — `AlbumMessage.caption`, field 1. WhatsApp Web has no such field, so it only arrived here after auditing the Android APK; see [`npm run audit:apk`](#-update-whatsapp-web-version). Leave it out and the field is omitted entirely.
 
 An album requires at least two image/video media items.
 
@@ -2272,6 +2275,7 @@ Supporting commands:
 | `npm run fetch:bundle -- <dir>` | download the raw bundle |
 | `npm run update:version` | bump the pinned revision without any of the checks |
 | `npm run audit:apk -- <dir>` | diff `WAProto` against an extracted Android APK |
+| `npm run sync:proto -- --gaps <file>` | patch `WAProto` from an audit's `--json` output |
 
 **Auditing against Android.** Everything above reads the WhatsApp **Web** bundle, so a field the Android client knows and Web does not never reaches `WAProto` at all. `audit:apk` closes that blind spot: point it at a directory of extracted `classes*.dex` and it parses the protobuf model classes straight out of the dex — reading each `*_FIELD_NUMBER` constant and its value — then reports which fields and which whole types are missing, with their field numbers.
 
@@ -2279,7 +2283,17 @@ Supporting commands:
 npm run audit:apk -- /path/to/extracted-apk
 ```
 
-It is read-only and changes nothing; the output is a worklist, not a patch. Adding a field still means editing the generator's inputs, because `npm run proto:update` regenerates `WAProto` from the Web bundle and would drop a hand-written field.
+Add `--json <file>` and it writes the gaps in the shape `sync:proto` consumes, so the same code generator that patches from the Web bundle can patch from the APK:
+
+```
+npm run audit:apk -- /path/to/extracted-apk /dev/null --json gaps.json
+npm run sync:proto -- --gaps gaps.json
+npm run verify:proto
+```
+
+Nothing is written by hand, so `npm run proto:update` will not undo it — `sync:proto` is additive and reads the existing `WAProto` as its baseline.
+
+**Two guards matter, because a name can match while the numbering does not.** The auditor keeps only the single APK class that overlaps a type best — several classes carry similar field names and the loser is a false positive — and it refuses any field whose number is already taken in that type. Without the second guard, `CtwaContextData.canonicalUrl=3` would have been written straight over `sourceUrl`, silently corrupting the wire format. libsignal's own records are skipped outright.
 
 The diff covers every surface a WhatsApp change can reach the wire through — protobuf specs, stanza tags and attributes, `xmlns`, MEX operations, media paths — so a release that only moves UI code is reported as exactly that. `AGENTS.md` documents which surfaces matter and which are client-side noise.
 

@@ -13298,6 +13298,7 @@ export const proto = $root.proto = (() => {
         BotPluginMetadata.prototype.parentPluginType = null;
         BotPluginMetadata.prototype.faviconCdnUrl = null;
 
+        BotPluginMetadata.prototype.pluginVersion = null;
         let $oneOfFields;
 
         // Virtual OneOf for proto3 optional field
@@ -13372,6 +13373,11 @@ export const proto = $root.proto = (() => {
             set: $util.oneOfSetter($oneOfFields)
         });
 
+        Object.defineProperty(BotPluginMetadata.prototype, "_pluginVersion", {
+            get: $util.oneOfGetter($oneOfFields = ["pluginVersion"]),
+            set: $util.oneOfSetter($oneOfFields)
+        });
+
         BotPluginMetadata.create = function create(properties) {
             return new BotPluginMetadata(properties);
         };
@@ -13403,6 +13409,8 @@ export const proto = $root.proto = (() => {
                 w.uint32(96).int32(m.parentPluginType);
             if (m.faviconCdnUrl != null && Object.hasOwnProperty.call(m, "faviconCdnUrl"))
                 w.uint32(106).string(m.faviconCdnUrl);
+            if (m.pluginVersion != null && Object.hasOwnProperty.call(m, "pluginVersion"))
+                w.uint32(64).int32(m.pluginVersion);
             return w;
         };
 
@@ -13465,6 +13473,10 @@ export const proto = $root.proto = (() => {
                     }
                 case 13: {
                         m.faviconCdnUrl = r.string();
+                        break;
+                    }
+                case 8: {
+                        m.pluginVersion = r.int32();
                         break;
                     }
                 default:
@@ -13593,6 +13605,9 @@ export const proto = $root.proto = (() => {
             if (d.faviconCdnUrl != null) {
                 m.faviconCdnUrl = String(d.faviconCdnUrl);
             }
+            if (d.pluginVersion != null) {
+                m.pluginVersion = d.pluginVersion | 0;
+            }
             return m;
         };
 
@@ -13659,6 +13674,11 @@ export const proto = $root.proto = (() => {
                 d.faviconCdnUrl = m.faviconCdnUrl;
                 if (o.oneofs)
                     d._faviconCdnUrl = "faviconCdnUrl";
+            }
+            if (m.pluginVersion != null && m.hasOwnProperty("pluginVersion")) {
+                d.pluginVersion = m.pluginVersion;
+                if (o.oneofs)
+                    d._pluginVersion = "pluginVersion";
             }
             return d;
         };
@@ -38836,6 +38856,7 @@ export const proto = $root.proto = (() => {
             HydratedURLButton.prototype.consentedUsersUrl = null;
             HydratedURLButton.prototype.webviewPresentation = null;
 
+            HydratedURLButton.prototype.webviewInteraction = null;
             let $oneOfFields;
 
             // Virtual OneOf for proto3 optional field
@@ -38862,6 +38883,11 @@ export const proto = $root.proto = (() => {
                 set: $util.oneOfSetter($oneOfFields)
             });
 
+            Object.defineProperty(HydratedURLButton.prototype, "_webviewInteraction", {
+                get: $util.oneOfGetter($oneOfFields = ["webviewInteraction"]),
+                set: $util.oneOfSetter($oneOfFields)
+            });
+
             HydratedURLButton.create = function create(properties) {
                 return new HydratedURLButton(properties);
             };
@@ -38877,6 +38903,8 @@ export const proto = $root.proto = (() => {
                     w.uint32(26).string(m.consentedUsersUrl);
                 if (m.webviewPresentation != null && Object.hasOwnProperty.call(m, "webviewPresentation"))
                     w.uint32(32).int32(m.webviewPresentation);
+                if (m.webviewInteraction != null && Object.hasOwnProperty.call(m, "webviewInteraction"))
+                    w.uint32(40).bool(m.webviewInteraction);
                 return w;
             };
 
@@ -38907,6 +38935,10 @@ export const proto = $root.proto = (() => {
                         }
                     case 4: {
                             m.webviewPresentation = r.int32();
+                            break;
+                        }
+                    case 5: {
+                            m.webviewInteraction = r.bool();
                             break;
                         }
                     default:
@@ -38954,6 +38986,9 @@ export const proto = $root.proto = (() => {
                     m.webviewPresentation = 3;
                     break;
                 }
+                if (d.webviewInteraction != null) {
+                    m.webviewInteraction = Boolean(d.webviewInteraction);
+                }
                 return m;
             };
 
@@ -38980,6 +39015,11 @@ export const proto = $root.proto = (() => {
                     d.webviewPresentation = o.enums === String ? $root.proto.HydratedTemplateButton.HydratedURLButton.WebviewPresentationType[m.webviewPresentation] === undefined ? m.webviewPresentation : $root.proto.HydratedTemplateButton.HydratedURLButton.WebviewPresentationType[m.webviewPresentation] : m.webviewPresentation;
                     if (o.oneofs)
                         d._webviewPresentation = "webviewPresentation";
+                }
+                if (m.webviewInteraction != null && m.hasOwnProperty("webviewInteraction")) {
+                    d.webviewInteraction = m.webviewInteraction;
+                    if (o.oneofs)
+                        d._webviewInteraction = "webviewInteraction";
                 }
                 return d;
             };
@@ -42935,6 +42975,7 @@ export const proto = $root.proto = (() => {
         Message.prototype.botPlatformRegistrationSuccessMessage = null;
         Message.prototype.newsletterScheduledMessage = null;
 
+        Message.prototype.newsletterFollowerInviteMessage = null;
         let $oneOfFields;
 
         // Virtual OneOf for proto3 optional field
@@ -43607,6 +43648,11 @@ export const proto = $root.proto = (() => {
             set: $util.oneOfSetter($oneOfFields)
         });
 
+        Object.defineProperty(Message.prototype, "_newsletterFollowerInviteMessage", {
+            get: $util.oneOfGetter($oneOfFields = ["newsletterFollowerInviteMessage"]),
+            set: $util.oneOfSetter($oneOfFields)
+        });
+
         Message.create = function create(properties) {
             return new Message(properties);
         };
@@ -43838,6 +43884,8 @@ export const proto = $root.proto = (() => {
                 $root.proto.Message.FutureProofMessage.encode(m.botPlatformRegistrationSuccessMessage, w.uint32(1050).fork()).ldelim();
             if (m.newsletterScheduledMessage != null && Object.hasOwnProperty.call(m, "newsletterScheduledMessage"))
                 $root.proto.Message.FutureProofMessage.encode(m.newsletterScheduledMessage, w.uint32(1058).fork()).ldelim();
+            if (m.newsletterFollowerInviteMessage != null && Object.hasOwnProperty.call(m, "newsletterFollowerInviteMessage"))
+                $root.proto.Message.NewsletterFollowerInviteMessage.encode(m.newsletterFollowerInviteMessage, w.uint32(866).fork()).ldelim();
             return w;
         };
 
@@ -44300,6 +44348,10 @@ export const proto = $root.proto = (() => {
                     }
                 case 132: {
                         m.newsletterScheduledMessage = $root.proto.Message.FutureProofMessage.decode(r, r.uint32(), undefined, n + 1);
+                        break;
+                    }
+                case 108: {
+                        m.newsletterFollowerInviteMessage = $root.proto.Message.NewsletterFollowerInviteMessage.decode(r, r.uint32(), undefined, n + 1);
                         break;
                     }
                 default:
@@ -44876,6 +44928,11 @@ export const proto = $root.proto = (() => {
                     throw TypeError(".proto.Message.newsletterScheduledMessage: object expected");
                 m.newsletterScheduledMessage = $root.proto.Message.FutureProofMessage.fromObject(d.newsletterScheduledMessage, n + 1);
             }
+            if (d.newsletterFollowerInviteMessage != null) {
+                if (typeof d.newsletterFollowerInviteMessage !== "object")
+                    throw TypeError(".proto.newsletterFollowerInviteMessage: object expected");
+                m.newsletterFollowerInviteMessage = $root.proto.Message.NewsletterFollowerInviteMessage.fromObject(d.newsletterFollowerInviteMessage, n + 1);
+            }
             return m;
         };
 
@@ -45443,6 +45500,11 @@ export const proto = $root.proto = (() => {
                 if (o.oneofs)
                     d._newsletterScheduledMessage = "newsletterScheduledMessage";
             }
+            if (m.newsletterFollowerInviteMessage != null && m.hasOwnProperty("newsletterFollowerInviteMessage")) {
+                d.newsletterFollowerInviteMessage = $root.proto.Message.NewsletterFollowerInviteMessage.toObject(m.newsletterFollowerInviteMessage, o);
+                if (o.oneofs)
+                    d._newsletterFollowerInviteMessage = "newsletterFollowerInviteMessage";
+            }
             return d;
         };
 
@@ -45470,6 +45532,7 @@ export const proto = $root.proto = (() => {
             AlbumMessage.prototype.expectedVideoCount = null;
             AlbumMessage.prototype.contextInfo = null;
 
+            AlbumMessage.prototype.caption = null;
             let $oneOfFields;
 
             // Virtual OneOf for proto3 optional field
@@ -45490,6 +45553,11 @@ export const proto = $root.proto = (() => {
                 set: $util.oneOfSetter($oneOfFields)
             });
 
+            Object.defineProperty(AlbumMessage.prototype, "_caption", {
+                get: $util.oneOfGetter($oneOfFields = ["caption"]),
+                set: $util.oneOfSetter($oneOfFields)
+            });
+
             AlbumMessage.create = function create(properties) {
                 return new AlbumMessage(properties);
             };
@@ -45503,6 +45571,8 @@ export const proto = $root.proto = (() => {
                     w.uint32(24).uint32(m.expectedVideoCount);
                 if (m.contextInfo != null && Object.hasOwnProperty.call(m, "contextInfo"))
                     $root.proto.ContextInfo.encode(m.contextInfo, w.uint32(138).fork()).ldelim();
+                if (m.caption != null && Object.hasOwnProperty.call(m, "caption"))
+                    w.uint32(10).string(m.caption);
                 return w;
             };
 
@@ -45529,6 +45599,10 @@ export const proto = $root.proto = (() => {
                         }
                     case 17: {
                             m.contextInfo = $root.proto.ContextInfo.decode(r, r.uint32(), undefined, n + 1);
+                            break;
+                        }
+                    case 1: {
+                            m.caption = r.string();
                             break;
                         }
                     default:
@@ -45558,6 +45632,9 @@ export const proto = $root.proto = (() => {
                         throw TypeError(".proto.Message.AlbumMessage.contextInfo: object expected");
                     m.contextInfo = $root.proto.ContextInfo.fromObject(d.contextInfo, n + 1);
                 }
+                if (d.caption != null) {
+                    m.caption = String(d.caption);
+                }
                 return m;
             };
 
@@ -45579,6 +45656,11 @@ export const proto = $root.proto = (() => {
                     d.contextInfo = $root.proto.ContextInfo.toObject(m.contextInfo, o);
                     if (o.oneofs)
                         d._contextInfo = "contextInfo";
+                }
+                if (m.caption != null && m.hasOwnProperty("caption")) {
+                    d.caption = m.caption;
+                    if (o.oneofs)
+                        d._caption = "caption";
                 }
                 return d;
             };

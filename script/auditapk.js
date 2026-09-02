@@ -12,6 +12,30 @@ import { proto } from '../WAProto/index.js'
 
 const dir = process.argv[2]
 const out = process.argv[3]
+const jsonAt = process.argv.indexOf('--json')
+const jsonOut = jsonAt !== -1 ? process.argv[jsonAt + 1] : null
+
+/** Java field types the dex declares, mapped to protobuf kinds. */
+const KINDS = {
+    'Ljava/lang/String;': 'STRING',
+    'Lcom/google/protobuf/ByteString;': 'BYTES',
+    Z: 'BOOL',
+    I: 'INT32',
+    J: 'INT64',
+    F: 'FLOAT',
+    D: 'DOUBLE'
+}
+
+/**
+ * libsignal's own records are maintained by hand next to the crypto that reads
+ * them; patching them from a decompiled client would be reckless.
+ */
+const HANDS_OFF = new Set([
+    'SenderKeyDistributionMessage', 'SenderKeyStateStructure', 'SenderKeyRecordStructure',
+    'SessionStructure', 'RecordStructure', 'PreKeyRecordStructure', 'SignedPreKeyRecordStructure',
+    'IdentityKeyPairStructure', 'SignalMessage', 'PreKeySignalMessage', 'KeyExchangeMessage',
+    'SyncdRecord', 'SyncdMutation', 'Message.AppStateSyncKey'
+])
 
 if (!dir) {
     console.error('pakai: node script/auditapk.js <folder-berisi-classes.dex> [keluaran.txt]')
@@ -45,6 +69,22 @@ const readValue = (buffer, offset) => {
 }
 
 const camel = name => name.toLowerCase().replace(/_([a-z0-9])/g, (_, c) => c.toUpperCase())
+
+/**
+ * Field numbers already spoken for in WAProto, read back out of the generated
+ * encoder. A name can match while the numbering does not, and writing such a
+ * field in would silently overwrite an existing one on the wire.
+ */
+const takenNumbers = () => {
+    const source = readFileSync(new URL('../WAProto/index.js', import.meta.url), 'utf8')
+    const taken = new Map()
+    for (const match of source.matchAll(/([A-Za-z0-9_]+)\.encode = function encode\(m, w\) \{([\s\S]*?)\n\s*\};/g)) {
+        const ids = taken.get(match[1]) ?? new Set()
+        for (const tag of match[2].matchAll(/w\.uint32\((\d+)\)/g)) ids.add(Number.parseInt(tag[1], 10) >>> 3)
+        taken.set(match[1], ids)
+    }
+    return taken
+}
 
 const readDex = path => {
     const buffer = readFileSync(path)
@@ -101,6 +141,7 @@ const readDex = path => {
 
         const fields = []
         const numbers = {}
+        const javaTypes = {}
         let index = 0
         for (let k = 0; k < counts[0]; k++) {
             const [delta, afterIndex] = uleb(buffer, cursor)
@@ -114,8 +155,18 @@ const readDex = path => {
             numbers[field] = values[k]
         }
 
+        let instanceIndex = 0
+        for (let k = 0; k < counts[1]; k++) {
+            const [delta, afterIndex] = uleb(buffer, cursor)
+            instanceIndex += delta
+            const [, afterAccess] = uleb(buffer, afterIndex)
+            cursor = afterAccess
+            const name = fieldName(instanceIndex)
+            if (name.endsWith('_')) javaTypes[name.slice(0, -1)] = typeName(buffer.readUInt16LE(fieldOffset + instanceIndex * 8 + 2))
+        }
+
         if (fields.length >= 2) {
-            classes.push({ cls: typeName(buffer.readUInt32LE(at)), fields: fields.sort(), numbers })
+            classes.push({ cls: typeName(buffer.readUInt32LE(at)), fields: fields.sort(), numbers, javaTypes })
         }
     }
     return classes
@@ -150,8 +201,11 @@ const overlap = (fields, other) => {
     return fields.filter(field => set.has(field.toLowerCase())).length
 }
 
+const taken = takenNumbers()
 const missingTypes = []
 const missingFields = []
+const matched = new Map()
+const claimed = new Map()
 
 for (const entry of apk) {
     if (entry.cls.startsWith('Lcom/google/protobuf/')) continue
@@ -171,10 +225,16 @@ for (const entry of apk) {
         continue
     }
 
+    matched.set(entry.cls, best.name)
+    const held = claimed.get(best.name)
+    if (!held || bestScore > held.score) claimed.set(best.name, { score: bestScore, cls: entry.cls })
+
     const have = new Set(best.fields)
     const gap = entry.fields.filter(field => !have.has(field.toLowerCase()))
     if (gap.length) {
         missingFields.push(best.name + '  <- ' + entry.cls + '  ' + gap.map(f => f + '=' + entry.numbers[f]).join(' '))
+        entry.gap = gap
+        entry.ourType = best.name
     }
 }
 
@@ -188,6 +248,41 @@ const report = [
     '## tipe tanpa padanan (' + missingTypes.length + ')',
     ...missingTypes.sort()
 ].join('\n')
+
+if (jsonOut) {
+    const gaps = []
+    const skipped = []
+    for (const entry of apk) {
+        if (!entry.gap) continue
+        if (HANDS_OFF.has(entry.ourType)) {
+            skipped.push(entry.ourType + ' (' + entry.gap.join(' ') + ') — libsignal, dibiarkan')
+            continue
+        }
+        if (claimed.get(entry.ourType)?.cls !== entry.cls) {
+            skipped.push(entry.ourType + ' (' + entry.gap.join(' ') + ') — ' + entry.cls + ' bukan padanan terbaik')
+            continue
+        }
+        const fields = []
+        for (const name of entry.gap) {
+            const java = entry.javaTypes[name]
+            const id = entry.numbers[name]
+            if (!java || !id) { skipped.push(entry.ourType + '.' + name + ' — tipe atau nomor tidak terbaca'); continue }
+            if (taken.get(entry.ourType.split('.').pop())?.has(id)) {
+                skipped.push(entry.ourType + '.' + name + ' — nomor ' + id + ' sudah dipakai field lain')
+                continue
+            }
+            if (KINDS[java]) { fields.push({ name, id, kind: KINDS[java] }); continue }
+            const ref = matched.get(java)
+            if (ref) { fields.push({ name, id, kind: 'MESSAGE', ref }); continue }
+            skipped.push(entry.ourType + '.' + name + ' — ' + java + ' tidak bisa dipetakan')
+        }
+        if (fields.length) gaps.push({ type: entry.ourType, fields })
+    }
+    gaps.sort((a, b) => a.type.localeCompare(b.type))
+    writeFileSync(jsonOut, JSON.stringify({ gaps, needed: [], specs: {} }, null, 2) + '\n')
+    console.log('siap ditambal: ' + gaps.reduce((n, g) => n + g.fields.length, 0) + ' field di ' + gaps.length + ' tipe -> ' + jsonOut)
+    for (const line of skipped.sort()) console.log('  lewati ' + line)
+}
 
 if (out) {
     writeFileSync(out, report + '\n')

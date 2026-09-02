@@ -1958,6 +1958,7 @@ export namespace proto {
     }
 
     interface IBotPluginMetadata {
+        pluginVersion?: (number|null);
         provider?: (proto.BotPluginMetadata.SearchProvider|null);
         pluginType?: (proto.BotPluginMetadata.PluginType|null);
         thumbnailCdnUrl?: (string|null);
@@ -1973,6 +1974,7 @@ export namespace proto {
     }
 
     class BotPluginMetadata implements IBotPluginMetadata {
+        public pluginVersion?: (number|null);
         constructor(p?: proto.IBotPluginMetadata);
         public provider?: (proto.BotPluginMetadata.SearchProvider|null);
         public pluginType?: (proto.BotPluginMetadata.PluginType|null);
@@ -5443,6 +5445,7 @@ export namespace proto {
         }
 
         interface IHydratedURLButton {
+            webviewInteraction?: (boolean|null);
             displayText?: (string|null);
             url?: (string|null);
             consentedUsersUrl?: (string|null);
@@ -5450,6 +5453,7 @@ export namespace proto {
         }
 
         class HydratedURLButton implements IHydratedURLButton {
+            public webviewInteraction?: (boolean|null);
             constructor(p?: proto.HydratedTemplateButton.IHydratedURLButton);
             public displayText?: (string|null);
             public url?: (string|null);
@@ -6016,6 +6020,7 @@ export namespace proto {
     }
 
     interface IMessage {
+        newsletterFollowerInviteMessage?: (proto.Message.INewsletterFollowerInviteMessage|null);
         conversation?: (string|null);
         senderKeyDistributionMessage?: (proto.Message.ISenderKeyDistributionMessage|null);
         imageMessage?: (proto.Message.IImageMessage|null);
@@ -6131,6 +6136,7 @@ export namespace proto {
     }
 
     class Message implements IMessage {
+        public newsletterFollowerInviteMessage?: (proto.Message.INewsletterFollowerInviteMessage|null);
         constructor(p?: proto.IMessage);
         public conversation?: (string|null);
         public senderKeyDistributionMessage?: (proto.Message.ISenderKeyDistributionMessage|null);
@@ -6327,12 +6333,14 @@ export namespace proto {
 
 
         interface IAlbumMessage {
+            caption?: (string|null);
             expectedImageCount?: (number|null);
             expectedVideoCount?: (number|null);
             contextInfo?: (proto.IContextInfo|null);
         }
 
         class AlbumMessage implements IAlbumMessage {
+            public caption?: (string|null);
             constructor(p?: proto.Message.IAlbumMessage);
             public expectedImageCount?: (number|null);
             public expectedVideoCount?: (number|null);

@@ -106,6 +106,13 @@ The package combines the socket layer, protocol utilities, LID-aware addressing 
   - [Enforcements](#enforcements)
 - [Username & About](#-username--about)
 - [Group Management](#-group-management)
+- [Communities](#-communities)
+- [Privacy Settings](#-privacy-settings)
+- [Presence and Read Receipts](#-presence-and-read-receipts)
+- [Chat State](#-chat-state)
+- [Labels](#-labels)
+- [Business and Catalog](#-business-and-catalog)
+- [Calls](#-calls)
 - [Profile Picture](#-profile-picture)
 - [Useful Exports](#-useful-exports)
 - [Update WhatsApp Web Version](#-update-whatsapp-web-version)
@@ -2173,6 +2180,328 @@ await sock.groupUpdateDescription(
   'Welcome to Elaina Community 💜'
 )
 ```
+
+### Subject and Settings
+
+```js
+await sock.groupUpdateSubject(groupJid, 'New name')
+await sock.groupSettingUpdate(groupJid, 'announcement')
+```
+
+`groupSettingUpdate` takes one of `announcement` (only admins may send), `not_announcement`, `locked` (only admins may edit group info) or `unlocked`.
+
+### Who May Join and Who May Add
+
+```js
+await sock.groupMemberAddMode(groupJid, 'admin_add')
+await sock.groupJoinApprovalMode(groupJid, 'on')
+```
+
+`groupMemberAddMode` is `admin_add` or `all_member_add`. `groupJoinApprovalMode` is `on` or `off`; with it on, people who use the invite link land in a request queue instead of the group.
+
+### The Join Request Queue
+
+```js
+const pending = await sock.groupRequestParticipantsList(groupJid)
+await sock.groupRequestParticipantsUpdate(groupJid, [userJid], 'approve')
+await sock.groupRequestParticipantsUpdate(groupJid, [userJid], 'reject')
+```
+
+### Invite Links
+
+```js
+const code = await sock.groupInviteCode(groupJid)
+console.log('https://chat.whatsapp.com/' + code)
+
+const fresh = await sock.groupRevokeInvite(groupJid)
+
+const preview = await sock.groupGetInviteInfo(code)
+await sock.groupAcceptInvite(code)
+```
+
+`groupGetInviteInfo` reads the group behind a code without joining. There is also a direct invite pair — `groupRevokeInviteV4(groupJid, invitedJid)` and `groupAcceptInviteV4` — for the invite sent to one person rather than a link.
+
+### Disappearing Messages
+
+```js
+await sock.groupToggleEphemeral(groupJid, 7 * 24 * 60 * 60)
+await sock.groupToggleEphemeral(groupJid, 0)
+```
+
+The duration is in seconds; `0` turns it off. WhatsApp's own options are 24 hours, 7 days and 90 days.
+
+### Reading Groups
+
+```js
+const metadata = await sock.groupMetadata(groupJid)
+const all = await sock.groupFetchAllParticipating()
+
+await sock.groupLeave(groupJid)
+```
+
+`groupFetchAllParticipating` returns every group you are in, keyed by jid. It is one request for all of them, so prefer it over calling `groupMetadata` in a loop.
+
+---
+
+## 🏘️ Communities
+
+A community is a parent that owns groups. Every method mirrors its group counterpart, plus the linking calls that have no group equivalent.
+
+### Create and Link
+
+```js
+const community = await sock.communityCreate('Elaina Community', 'What this community is for')
+
+const group = await sock.communityCreateGroup('Announcements', [userJid], community.id)
+
+await sock.communityLinkGroup(existingGroupJid, community.id)
+await sock.communityUnlinkGroup(existingGroupJid, community.id)
+
+const linked = await sock.communityFetchLinkedGroups(community.id)
+```
+
+`communityCreateGroup` makes a group already attached to the community. `communityLinkGroup` attaches one that exists — you must be admin of both.
+
+### Members and Settings
+
+```js
+await sock.communityParticipantsUpdate(communityJid, [userJid], 'promote')
+await sock.communityUpdateSubject(communityJid, 'New name')
+await sock.communityUpdateDescription(communityJid, 'New description')
+await sock.communitySettingUpdate(communityJid, 'announcement')
+await sock.communityMemberAddMode(communityJid, 'admin_add')
+await sock.communityJoinApprovalMode(communityJid, 'on')
+await sock.communityToggleEphemeral(communityJid, 7 * 24 * 60 * 60)
+```
+
+The actions and values match the group ones above.
+
+### Invites and Reading
+
+```js
+const code = await sock.communityInviteCode(communityJid)
+await sock.communityRevokeInvite(communityJid)
+await sock.communityAcceptInvite(code)
+const preview = await sock.communityGetInviteInfo(code)
+
+const metadata = await sock.communityMetadata(communityJid)
+const all = await sock.communityFetchAllParticipating()
+await sock.communityLeave(communityJid)
+```
+
+---
+
+## 🔒 Privacy Settings
+
+```js
+const settings = await sock.fetchPrivacySettings(true)
+```
+
+Pass `true` to bypass the cache. Each setting has its own updater, and the value goes to the server unchanged — an unknown one is rejected there, not here:
+
+| Call | Accepts |
+|---|---|
+| `updateLastSeenPrivacy(value)` | `all`, `contacts`, `contact_blacklist`, `none` |
+| `updateOnlinePrivacy(value)` | `all`, `match_last_seen` |
+| `updateProfilePicturePrivacy(value)` | `all`, `contacts`, `contact_blacklist`, `none` |
+| `updateStatusPrivacy(value)` | `all`, `contacts`, `contact_blacklist`, `none` |
+| `updateReadReceiptsPrivacy(value)` | `all`, `none` |
+| `updateGroupsAddPrivacy(value)` | `all`, `contacts`, `contact_blacklist` |
+| `updateCallPrivacy(value)` | `all`, `known` |
+| `updateMessagesPrivacy(value)` | `all`, `contacts` |
+| `updateDisableLinkPreviewsPrivacy(disabled)` | a boolean |
+
+```js
+await sock.updateLastSeenPrivacy('contacts')
+await sock.updateOnlinePrivacy('match_last_seen')
+await sock.updateDisableLinkPreviewsPrivacy(true)
+```
+
+### Default Disappearing Messages
+
+```js
+await sock.updateDefaultDisappearingMode(7 * 24 * 60 * 60)
+const durations = await sock.fetchDisappearingDuration(jidA, jidB)
+```
+
+The default applies to new chats. `fetchDisappearingDuration` takes any number of jids and reports what each is set to.
+
+### Blocking
+
+```js
+await sock.updateBlockStatus(jid, 'block')
+await sock.updateBlockStatus(jid, 'unblock')
+const blocked = await sock.fetchBlocklist()
+```
+
+---
+
+## 👀 Presence and Read Receipts
+
+```js
+await sock.presenceSubscribe(jid)
+
+await sock.sendPresenceUpdate('composing', jid)
+await sock.sendPresenceUpdate('recording', jid)
+await sock.sendPresenceUpdate('paused', jid)
+
+await sock.sendPresenceUpdate('available')
+await sock.sendPresenceUpdate('unavailable')
+```
+
+You only receive someone's presence after `presenceSubscribe` on their jid. `available` and `unavailable` are your own global state and take no jid; the rest are per-chat typing indicators. `recording` goes on the wire as `composing` with `media: audio`, which is what produces "recording audio…".
+
+### Marking as Read
+
+```js
+await sock.readMessages([msg.key])
+
+await sock.sendReceipt(jid, participant, [messageId], 'read')
+await sock.sendReceipts([msg.key], 'read')
+```
+
+`readMessages` is the one to reach for. `sendReceipt` and `sendReceipts` are the lower layer underneath it, with the receipt type spelled out — `read`, `read-self`, `played` or `undefined` for a plain delivery receipt.
+
+### Checking a Number
+
+```js
+const results = await sock.onWhatsApp('6281234567890', '6289876543210')
+for (const entry of results) {
+  console.log(entry.jid, entry.exists)
+}
+```
+
+---
+
+## 🗂️ Chat State
+
+`chatModify` writes to app state, so a change syncs to the phone and to every other linked device.
+
+```js
+await sock.chatModify({ archive: true, lastMessages: [msg] }, jid)
+await sock.chatModify({ pin: true }, jid)
+await sock.chatModify({ mute: 8 * 60 * 60 * 1000 }, jid)
+await sock.chatModify({ mute: null }, jid)
+await sock.chatModify({ markRead: false, lastMessages: [msg] }, jid)
+await sock.chatModify({ star: { messages: [{ id: msg.key.id, fromMe: msg.key.fromMe }], star: true } }, jid)
+await sock.chatModify({ clear: true, lastMessages: [msg] }, jid)
+await sock.chatModify({ delete: true, lastMessages: [msg] }, jid)
+await sock.chatModify({ contact: { fullName: 'Elaina' } }, jid)
+```
+
+`mute` is a duration in milliseconds, and `null` unmutes. Several of these need `lastMessages` — the server uses it to place the change in the chat's timeline, and it throws without it.
+
+### History and Resync
+
+```js
+await sock.fetchMessageHistory(50, oldestMsgKey, oldestMsgTimestamp)
+await sock.requestPlaceholderResend(messageKey)
+await sock.resyncAppState(['regular_high'], false)
+```
+
+`fetchMessageHistory` asks the phone for messages older than the key you pass; they arrive through `messaging-history.set`. `requestPlaceholderResend` asks for one message again when it arrived as a placeholder.
+
+---
+
+## 🏷️ Labels
+
+Labels are a WhatsApp Business feature.
+
+```js
+await sock.addLabel(jid, { id: '1', name: 'Customer', color: 0, deleted: false })
+
+await sock.addChatLabel(jid, labelId)
+await sock.removeChatLabel(jid, labelId)
+
+await sock.addMessageLabel(jid, messageId, labelId)
+await sock.removeMessageLabel(jid, messageId, labelId)
+```
+
+---
+
+## 🛍️ Business and Catalog
+
+```js
+const profile = await sock.getBusinessProfile(jid)
+await sock.updateBusinessProfile({ description: 'Toko Elaina', address: 'Jakarta', email: 'halo@example.com' })
+
+const catalog = await sock.getCatalog({ jid, limit: 10 })
+const collections = await sock.getCollections(jid, 51)
+const order = await sock.getOrderDetails(orderId, tokenBase64)
+```
+
+`updateBusinessProfile` is also exported under its original misspelling, `updateBussinesProfile`; both are the same function.
+
+### Managing Products
+
+```js
+const created = await sock.productCreate({
+  name: 'Elaina Sticker Pack',
+  description: 'A pack of stickers',
+  price: 15000,
+  currency: 'IDR',
+  isHidden: false,
+  images: [{ url: 'https://example.com/product.jpg' }]
+})
+
+await sock.productUpdate(created.id, { price: 20000 })
+await sock.productDelete([created.id])
+```
+
+### Profile and Quick Replies
+
+```js
+await sock.updateProfileName('Elaina')
+await sock.updateCoverPhoto(buffer)
+await sock.addOrEditQuickReply({ shortcut: 'hi', message: 'Hello!', keywords: ['halo'] })
+
+await sock.addOrEditContact(jid, { fullName: 'Elaina' })
+await sock.removeContact(jid)
+```
+
+`removeContact` is `chatModify({ contact: null })` under a friendlier name, so it syncs to the phone like any other contact edit.
+
+### Refetching Expired Media
+
+```js
+const refreshed = await sock.updateMediaMessage(msg)
+```
+
+WhatsApp's media URLs expire. When a download fails on an old message, this asks the sender's device for a fresh `directPath` and returns the message with it filled in — then download again.
+
+### Group Member Labels
+
+```js
+await sock.updateMemberLabel(groupJid, memberLabel)
+```
+
+Sends a `GROUP_MEMBER_LABEL_CHANGE` protocol message, which is how the per-group label beside a participant's name is set.
+
+---
+
+## 📞 Calls
+
+```js
+import { CALL_AUDIO_PREFIX, CALL_VIDEO_PREFIX } from '@rexxhayanasi/elaina-baileys'
+
+const token = await sock.createCallLink('video')
+console.log(CALL_VIDEO_PREFIX + token)
+
+const scheduled = await sock.createCallLink('audio', { startTime: Math.floor(Date.now() / 1000) + 3600 })
+console.log(CALL_AUDIO_PREFIX + scheduled)
+
+await sock.rejectCall(callId, callFrom)
+```
+
+`createCallLink` takes `audio` or `video` and returns just the token. The two prefixes are exported because they do not match the media name — video links live under `/video/` but audio links under `/voice/`. Pass an `event` with a `startTime` in unix seconds to schedule the call instead of opening it now.
+
+### Logging Out
+
+```js
+await sock.logout()
+```
+
+This unlinks the device on WhatsApp's side, so the stored credentials become useless. To stop the socket without unlinking, use `sock.end()`.
 
 ---
 

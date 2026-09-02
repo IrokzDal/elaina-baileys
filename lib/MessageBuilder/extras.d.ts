@@ -227,6 +227,24 @@ export declare function sendBloksWidget(sock: any, jid: string, options: {
 
 export declare function decodeBloksWidget(msg: any): (BloksWidget & { params: any }) | null;
 
+export interface RichMessageRead {
+    kind: 'airich' | 'a2ui' | 'bloks' | 'interactive';
+    text: string;
+    title: string;
+    buttons: { name: string; params: any }[];
+    html: string[];
+    typenames: string[];
+    sections: any[];
+    footerSections: any[];
+    embeddedScreens: any[];
+    submessages: any[];
+    responseId?: string;
+    a2ui?: { surfaceId: string; catalogId: string; version: string; components: A2UIComponent[] };
+    bloks?: { type: string; uuid: string; fallback: string; params: any };
+}
+
+export declare function readRichMessage(msg: any): RichMessageRead | null;
+
 export declare function decodeAIRich(msg: any): {
     responseId?: string;
     layouts: string[];

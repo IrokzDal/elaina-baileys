@@ -92,6 +92,7 @@ The package combines the socket layer, protocol utilities, LID-aware addressing 
   - [ButtonV2](#buttonv2)
   - [Carousel](#carousel)
   - [AIRich](#airich)
+  - [Reading Rich Messages Back](#reading-rich-messages-back)
   - [A2UI Cards](#a2ui-cards)
   - [HTML Mini App](#html-mini-app)
 - [Album Message](#-album-message)
@@ -1197,6 +1198,37 @@ rich.addSection(progressSection('Almost done', { inProgress: false }))
 | `progressSection` | `GenAIBotProgressStatusPrimitive` | same fields as thinking |
 
 Two primitives are deliberately left out: `GenAIMetaSubsQuotaUpsellPrimitive` is a Meta subscription upsell card, and `FOABloksPrimitive` names a Bloks screen the client fetches from Meta's servers rather than reading out of the message — neither of which a bot can populate.
+
+### Reading Rich Messages Back
+
+An AI Rich, A2UI or Bloks message arrives with nothing where a bot usually looks — `conversation` is empty, `extendedTextMessage` is absent, and `getContentType` reports only the wrapper (`botForwardedMessage` or `interactiveMessage`). `readRichMessage` normalises all of them into one shape.
+
+```js
+import { readRichMessage } from '@rexxhayanasi/elaina-baileys'
+
+sock.ev.on('messages.upsert', ({ messages }) => {
+    for (const msg of messages) {
+        const rich = readRichMessage(msg)
+        if (!rich) continue
+        console.log(rich.kind, rich.text)
+    }
+})
+```
+
+It returns `null` for anything that is not one of these, so it is safe to call on every message.
+
+| Field | Contents |
+|---|---|
+| `kind` | `a2ui`, `airich`, `bloks` or `interactive` |
+| `text` | every readable string joined by newlines — AI Rich text primitives, A2UI `Text` components, and the interactive body and footer |
+| `title` | `botMetadata.messageDisclaimerText`, falling back to the interactive header title |
+| `buttons` | native flow buttons with `buttonParamsJson` already parsed; `params` is `null` when it will not parse |
+| `html` | payloads of any HTML primitives |
+| `a2ui` | `surfaceId`, `catalogId`, `version` and the component list |
+| `bloks` | `type`, `uuid`, `fallback` and the parsed `params` |
+| `typenames`, `sections`, `footerSections`, `embeddedScreens`, `submessages`, `responseId` | the AI Rich parts, empty when absent |
+
+It unwraps view-once and the other envelopes first, so a card inside `viewOnceMessageV2` reads the same as a bare one.
 
 ### A2UI Cards
 

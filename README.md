@@ -1470,7 +1470,9 @@ await sock.sendMessage(jid, {
 })
 ```
 
-The per-item `caption` rides on each image or video. The `caption` beside `album` is the album's own — `AlbumMessage.caption`, field 1. WhatsApp Web has no such field, so it only arrived here after auditing the Android APK; see [`npm run audit:apk`](#-update-whatsapp-web-version). Leave it out and the field is omitted entirely.
+The per-item `caption` rides on each image or video. The `caption` beside `album` is the album's own — `AlbumMessage.caption`, field 1.
+
+**It is an Android-only field, so it is opt-in on purpose.** The WhatsApp Web protobuf has no `caption` on `AlbumMessage` at all; the field was found by auditing the Android APK. This library links as a Web device, so sending a field the real Web client cannot even express is a fingerprint. Leave the key out — as every existing caller already does — and nothing is written. Set it only when you have decided that trade is worth it.
 
 An album requires at least two image/video media items.
 
@@ -2293,7 +2295,15 @@ npm run verify:proto
 
 Nothing is written by hand, so `npm run proto:update` will not undo it — `sync:proto` is additive and reads the existing `WAProto` as its baseline.
 
-**Two guards matter, because a name can match while the numbering does not.** The auditor keeps only the single APK class that overlaps a type best — several classes carry similar field names and the loser is a false positive — and it refuses any field whose number is already taken in that type. Without the second guard, `CtwaContextData.canonicalUrl=3` would have been written straight over `sourceUrl`, silently corrupting the wire format. libsignal's own records are skipped outright.
+**Android is not the client this library presents as.** Baileys links as a WhatsApp Web device, so a field the Web bundle does not declare is one the real Web client never sends — decoding it costs nothing, sending it makes this client look like neither Web nor Android. The auditor cross-checks every candidate against the Web bundle and marks the difference:
+
+```
+KHUSUS ANDROID Message.AlbumMessage.caption — aman didekode, kirim hanya kalau memang disengaja
+```
+
+Treat that mark as a reason to keep the field readable but off by default. All four fields patched in so far carry it.
+
+**Two more guards matter, because a name can match while the numbering does not.** The auditor keeps only the single APK class that overlaps a type best — several classes carry similar field names and the loser is a false positive — and it refuses any field whose number is already taken in that type. Without the second guard, `CtwaContextData.canonicalUrl=3` would have been written straight over `sourceUrl`, silently corrupting the wire format. libsignal's own records are skipped outright.
 
 The diff covers every surface a WhatsApp change can reach the wire through — protobuf specs, stanza tags and attributes, `xmlns`, MEX operations, media paths — so a release that only moves UI code is reported as exactly that. `AGENTS.md` documents which surfaces matter and which are client-side noise.
 

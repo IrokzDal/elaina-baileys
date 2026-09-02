@@ -1,6 +1,7 @@
 import { readdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { proto } from '../WAProto/index.js'
+import { loadBundle } from './protobundle.js'
 
 /**
  * WAProto is generated from the WhatsApp Web bundle, so anything the Android
@@ -201,6 +202,25 @@ const overlap = (fields, other) => {
     return fields.filter(field => set.has(field.toLowerCase())).length
 }
 
+/**
+ * Baileys links as a WhatsApp Web device, so a field the Web bundle does not
+ * declare is one the real Web client never sends. Decoding it is free; sending
+ * it makes this client look like neither Web nor Android.
+ */
+const webFields = async () => {
+    try {
+        const bundle = await loadBundle({ directory: process.env.PROTO_BUNDLE_DIR })
+        const map = new Map()
+        for (const [name, fields] of bundle.specs) map.set(name, new Set(fields.map(f => f.name.toLowerCase())))
+        map.set('Message', new Set([...bundle.messageFields.keys()].map(n => n.toLowerCase())))
+        return map
+    }
+    catch {
+        return null
+    }
+}
+
+const web = await webFields()
 const taken = takenNumbers()
 const missingTypes = []
 const missingFields = []
@@ -276,11 +296,20 @@ if (jsonOut) {
             if (ref) { fields.push({ name, id, kind: 'MESSAGE', ref }); continue }
             skipped.push(entry.ourType + '.' + name + ' — ' + java + ' tidak bisa dipetakan')
         }
+        for (const field of fields) {
+            field.androidOnly = web ? !web.get(entry.ourType)?.has(field.name.toLowerCase()) : null
+        }
         if (fields.length) gaps.push({ type: entry.ourType, fields })
     }
     gaps.sort((a, b) => a.type.localeCompare(b.type))
     writeFileSync(jsonOut, JSON.stringify({ gaps, needed: [], specs: {} }, null, 2) + '\n')
     console.log('siap ditambal: ' + gaps.reduce((n, g) => n + g.fields.length, 0) + ' field di ' + gaps.length + ' tipe -> ' + jsonOut)
+    if (!web) console.log('  (bundle Web tidak tersedia, status khusus-android tidak diperiksa)')
+    for (const gap of gaps) {
+        for (const field of gap.fields) {
+            if (field.androidOnly) console.log('  KHUSUS ANDROID ' + gap.type + '.' + field.name + ' — aman didekode, kirim hanya kalau memang disengaja')
+        }
+    }
     for (const line of skipped.sort()) console.log('  lewati ' + line)
 }
 

@@ -355,7 +355,14 @@ const load = async () => {
         const fork = readForkInterfaces()
         return { specs: bundle.specs, ...diffBundle(bundle, fork) }
     }
-    const external = JSON.parse(readFileSync(gapsFile, 'utf8'))
+    let external
+    try {
+        external = JSON.parse(readFileSync(gapsFile, 'utf8'))
+    }
+    catch (error) {
+        console.error(`cannot read gaps from ${gapsFile}: ${error.message}`)
+        process.exit(1)
+    }
     return {
         specs: new Map(Object.entries(external.specs ?? {})),
         missingMessage: [],
@@ -374,7 +381,9 @@ if (missingMessage.length) {
 }
 
 if (!gaps.length) {
-    console.log('WAProto already declares every field the bundle does.')
+    console.log(gapsFile
+        ? `No fields to patch from ${gapsFile}.`
+        : 'WAProto already declares every field the bundle does.')
     process.exit(0)
 }
 

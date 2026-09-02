@@ -684,22 +684,17 @@ await sock.sendMessage(jid, {
 })
 ```
 
-**View once.** Text supports view-once, not just media. `ExtendedTextMessage` carries a `viewOnce` field, and the Android client has a whole module for it — `FMessageViewOnceText`, `ConversationRowViewOnceText`, `ViewOnceTextRowFactory`, a dedicated `ViewOnceTextFragment`, and its own `VIEW_ONCE_TEXT_MESSAGES_SENT` / `_RECEIVED` / `_OPENED` counters.
+**View once for text — built, but it renders as unsupported.** `ExtendedTextMessage` carries a `viewOnce` field, and the Android client ships a whole module around it: `FMessageViewOnceText`, `ConversationRowViewOnceText`, `ViewOnceTextRowFactory`, a dedicated `ViewOnceTextFragment`, and its own `VIEW_ONCE_TEXT_MESSAGES_SENT` / `_RECEIVED` / `_OPENED` counters. The client's own encoder sets `extendedTextMessage.viewOnce` and wraps the result in `viewOnceMessageV2Extension`.
 
-```js
-await sock.sendMessage(jid, {
-  text: 'this disappears once read',
-  viewOnceV2Extension: true
-})
-```
-
-That produces what the client actually looks for — it reads `extendedTextMessage.viewOnce` and expects the `viewOnceMessageV2Extension` wrapper:
+`sendMessage(jid, { text, viewOnceV2Extension: true })` produces exactly that shape:
 
 ```js
 { viewOnceMessageV2Extension: { message: { extendedTextMessage: { text, viewOnce: true } } } }
 ```
 
-`viewOnce: true` and `viewOnceV2: true` also work and wrap in `viewOnceMessage` / `viewOnceMessageV2` instead. The plain `conversation` field cannot carry this — it is a bare string with nowhere to put the flag — so the text has to travel as `extendedTextMessage`, which this fork always does.
+**Measured on a 2.26.34 device, it still displays "you received a message your version of WhatsApp doesn't support."** The payload matches what the client writes for itself, so the shape is not the problem — the feature is present in the binary but not live for ordinary senders on that build. Treat it as unavailable until a device shows otherwise.
+
+`viewOnce: true` and `viewOnceV2: true` wrap in `viewOnceMessage` / `viewOnceMessageV2` instead; those are the wrappers media uses. The plain `conversation` field cannot carry any of this — it is a bare string with nowhere to put the flag — so the text has to travel as `extendedTextMessage`, which this fork always does.
 
 ### Image
 

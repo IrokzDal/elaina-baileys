@@ -17,7 +17,7 @@
     <a href="LICENSE">
       <img src="https://img.shields.io/badge/license-MIT-success" alt="license" />
     </a>
-    <img src="https://img.shields.io/badge/Node.js-%3E%3D22-339933?logo=node.js&logoColor=white" alt="Node.js" />
+    <img src="https://img.shields.io/badge/Node.js-%3E%3D20-339933?logo=node.js&logoColor=white" alt="Node.js" />
     <img src="https://img.shields.io/badge/Module-ESM-F7DF1E?logo=javascript&logoColor=black" alt="ESM" />
     <img src="https://img.shields.io/badge/MessageBuilder-v4.7-7F5AF0" alt="Message Builder" />
   </p>
@@ -69,7 +69,7 @@ The package combines the socket layer, protocol utilities, LID-aware addressing 
 | 🪪 LID / PN Addressing | Supports modern LID addressing while exposing the PN/JID alternatives supplied by WhatsApp when available. |
 | 📷 Profile Picture | Fetch, update, and remove profile pictures. |
 | 🤖 AI Rich | Experimental rich-response builder for text, code, tables, media, suggestions, and other layouts. |
-| 📦 ESM | ESM-first package designed for Node.js 22+; Node.js 24 is recommended. |
+| 📦 ESM | ESM-first package requiring Node.js 20+; Node.js 22 or newer is recommended. |
 
 ---
 
@@ -131,8 +131,8 @@ The package combines the socket layer, protocol utilities, LID-aware addressing 
 
 ## ⚙️ Requirements
 
-- Node.js **22 or newer**
-- **Node.js 24 recommended** for development and release workflows
+- Node.js **20 or newer** — this is what `package.json` declares and what the `preinstall` check enforces, so anything older is refused at install time
+- **Node.js 22 or newer recommended**, and **24** for development and release workflows
 - npm
 - A WhatsApp account for pairing
 
@@ -385,10 +385,13 @@ For a bot whose state already lives in NekoDB, so the session travels with the r
 import { useNekoDBAuth } from '@rexxhayanasi/elaina-baileys'
 
 const { state, saveCreds } = await useNekoDBAuth(db)
-const { state, saveCreds } = await useNekoDBAuth(db, 'my_sessions')
 ```
 
-The first argument must be a connected NekoDB instance; the collection defaults to `baileys_elaina_auth`.
+The first argument must be a connected NekoDB instance; the collection defaults to `baileys_elaina_auth`. Pass a second argument to keep several sessions in one database:
+
+```js
+const { state, saveCreds } = await useNekoDBAuth(db, 'my_sessions')
+```
 
 ### Caching Signal Keys
 
@@ -811,14 +814,14 @@ Text options and image options can be mixed in the same poll, exactly as the com
 
 Photo polls do render in groups and one-to-one chats — the phone clients accept them there.
 
-Two caveats worth knowing. WhatsApp **Web**'s own receiver is stricter than the phones:
+Two caveats worth knowing. WhatsApp **Web**'s own receiver is stricter than the phones. Its gate, read out of the Web bundle, is roughly this — it is WhatsApp's code, not an export of this library, so there is nothing here to import or call:
 
-```js
-isPhotoPollReceiverEnabled = msg =>
+```text
+isPhotoPollReceiverEnabled(msg) =
   isNewsletterMsg({ from: msg.from, to: msg.to }) && isNewsletterPhotoPollsReceiverEnabled()
 ```
 
-so a photo poll that looks right on a phone can show as unsupported in a browser session. And combining image options with `hideVoter` or `endDate` moves the message to `pollCreationMessageV6`; if the images stop appearing once you add those switches, send the photo poll without them.
+In other words Web only accepts a photo poll inside a channel, so a photo poll that looks right on a phone can show as unsupported in a browser session. And combining image options with `hideVoter` or `endDate` moves the message to `pollCreationMessageV6`; if the images stop appearing once you add those switches, send the photo poll without them.
 
 ---
 
@@ -2252,7 +2255,7 @@ await sock.groupParticipantsUpdate(groupJid, [userJid], 'promote')
 await sock.groupParticipantsUpdate(groupJid, [userJid], 'demote')
 ```
 
-### Update Description
+### Update Group Description
 
 ```js
 await sock.groupUpdateDescription(

@@ -120,6 +120,29 @@ export declare function sendHtmlArtifact(sock: any, jid: string, html: string, o
     [key: string]: any;
 }): Promise<{ message: any; mediaId: string }>;
 
+export declare const SourceProvider: Readonly<{ UNKNOWN: 0; BING: 1; GOOGLE: 2; SUPPORT: 3; OTHER: 4 }>;
+
+export interface SourceInput {
+    url: string;
+    title?: string;
+    query?: string;
+    favicon?: string;
+    thumbnail?: string;
+    citation?: number;
+    provider?: number;
+}
+
+export declare function botSourcesMetadata(sources: SourceInput[]): { sources: any[] };
+
+export declare function embeddedScreen(options?: {
+    id?: string;
+    title?: string;
+    content?: any[];
+    tabs?: any[];
+    header?: any;
+    body?: any;
+}): any;
+
 export declare function footerActionSection(actionType: string, options?: {
     buttonText?: string;
     actionId?: string;
@@ -170,6 +193,7 @@ export declare function decodeAIRich(msg: any): {
     footerTypenames: string[];
     sections: any[];
     footerSections: any[];
+    embeddedScreens: any[];
     submessages: any[];
     unified: any;
 } | null;
